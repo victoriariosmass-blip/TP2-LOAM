@@ -16,9 +16,8 @@ class Dino2048App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Dino 2048',
       theme: ThemeData(
-        // Fondo color arena claro típico de la temática fósil/brutalista
-        scaffoldBackgroundColor: const Color(0xFFF3E5D8), 
-        // Tipografía por defecto pesada (se recomienda integrar Google Fonts 'Space Mono' luego)
+        // Fondo general: Celeste claro/Hielo[cite: 18]
+        scaffoldBackgroundColor: const Color(0xFFCBF3F0), 
         fontFamily: 'Courier', 
       ),
       home: const GameScreen(),
@@ -49,17 +48,17 @@ class GameScreen extends StatelessWidget {
     );
   }
 
-  // 1. HEADER (Usuario, Score, Cuenta, Diamantes)
+  // 1. HEADER 
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFE9C46A), // Ocre/Arena oscuro
-        border: Border.all(color: Colors.black, width: 4), // Borde grueso
+        color: const Color(0xFFFFBF69), // Naranja arena[cite: 18]
+        border: Border.all(color: Colors.black, width: 4),
         boxShadow: const [
           BoxShadow(
             color: Colors.black,
-            offset: Offset(6, 6), // Sombra sólida y desplazada
+            offset: Offset(6, 6),
           ),
         ],
       ),
@@ -75,7 +74,7 @@ class GameScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2A9D8F), // Verde oscuro
+                  color: const Color(0xFF1A535C), // Azul petróleo oscuro[cite: 18]
                   border: Border.all(color: Colors.black, width: 3),
                 ),
                 child: const Text(
@@ -108,15 +107,14 @@ class GameScreen extends StatelessWidget {
     );
   }
 
-  // 2. EL TABLERO (Espacio reservado para Flame)
-// 2. EL TABLERO (Motor Flame inyectado)
+  // 2. EL TABLERO (Conecta con Flame)
   Widget _buildBoardPlaceholder() {
     return Expanded(
       child: Container(
         width: double.infinity,
-        clipBehavior: Clip.hardEdge, // Evita que el juego se salga de los bordes
+        clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
-          color: const Color(0xFFE76F51),
+          color: const Color(0xFF1A535C), // Fondo del tablero: Azul petróleo oscuro[cite: 18]
           border: Border.all(color: Colors.black, width: 6),
           boxShadow: const [
             BoxShadow(
@@ -125,7 +123,7 @@ class GameScreen extends StatelessWidget {
             ),
           ],
         ),
-        child: GameWidget(game: DinoGame()), // <-- Aquí arranca Flame
+        child: GameWidget(game: DinoGame()),
       ),
     );
   }
@@ -136,17 +134,27 @@ class GameScreen extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: BrutalistButton(text: 'INICIO', color: const Color(0xFF2A9D8F))),
+            // Botón Inicio: Verde turquesa[cite: 18]
+            Expanded(child: BrutalistButton(text: 'INICIO', color: const Color(0xFF2EC4B6))),
             const SizedBox(width: 16),
-            Expanded(child: BrutalistButton(text: 'PAUSA', color: const Color(0xFFE9C46A))),
+            // Botón Pausa: Naranja arena[cite: 18]
+            Expanded(child: BrutalistButton(text: 'PAUSA', color: const Color(0xFFFFBF69))),
           ],
         ),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: BrutalistButton(text: 'REINICIAR', color: const Color(0xFFF4A261))), // Naranja suave
+            // Botón Reiniciar: Rojo coral[cite: 18]
+            Expanded(child: BrutalistButton(text: 'REINICIAR', color: const Color(0xFFFF6B6B))), 
             const SizedBox(width: 16),
-            Expanded(child: BrutalistButton(text: 'NUEVA', color: const Color(0xFFE76F51))), // Terracota
+            // Botón Nueva: Azul petróleo oscuro[cite: 18]
+            Expanded(
+              child: BrutalistButton(
+                text: 'NUEVA', 
+                color: const Color(0xFF1A535C),
+                textColor: Colors.white, // Letra blanca para contrastar el fondo oscuro
+              ),
+            ),
           ],
         ),
       ],
@@ -154,13 +162,18 @@ class GameScreen extends StatelessWidget {
   }
 }
 
-// WIDGET REUTILIZABLE PARA BOTONES BRUTALISTAS
-// WIDGET REUTILIZABLE PARA BOTONES BRUTALISTAS ANIMADOS
+// WIDGET DE BOTONES ANIMADOS
 class BrutalistButton extends StatefulWidget {
   final String text;
   final Color color;
+  final Color textColor;
 
-  const BrutalistButton({super.key, required this.text, required this.color});
+  const BrutalistButton({
+    super.key, 
+    required this.text, 
+    required this.color,
+    this.textColor = Colors.black,
+  });
 
   @override
   State<BrutalistButton> createState() => _BrutalistButtonState();
@@ -172,97 +185,37 @@ class _BrutalistButtonState extends State<BrutalistButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // Detecta cuando el dedo toca la pantalla
       onTapDown: (_) => setState(() => _isPressed = true),
-      // Detecta cuando el dedo se levanta (se completa el clic)
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        // Aquí conectaremos la lógica del juego más adelante
-        print('Botón presionado: ${widget.text}');
-      },
-      // Detecta si el dedo se desliza fuera del botón antes de soltar
+      onTapUp: (_) => setState(() => _isPressed = false),
       onTapCancel: () => setState(() => _isPressed = false),
-      
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100), // Animación rápida y brusca
-        transform: Matrix4.translationValues(
-          _isPressed ? 4.0 : 0.0, // Desplazamiento en X
-          _isPressed ? 4.0 : 0.0, // Desplazamiento en Y
-          0.0,
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: widget.color,
-          border: Border.all(color: Colors.black, width: 4),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black,
-              // La sombra desaparece cuando el botón se hunde
-              offset: _isPressed ? const Offset(0, 0) : const Offset(4, 4),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            widget.text,
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w900,
-              fontSize: 16,
-              letterSpacing: 1.5,
+      child: Transform.translate(
+        offset: _isPressed ? const Offset(4, 4) : Offset.zero,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: widget.color,
+            border: Border.all(color: Colors.black, width: 3),
+            boxShadow: _isPressed
+                ? const []
+                : const [
+                    BoxShadow(
+                      color: Colors.black,
+                      offset: Offset(6, 6),
+                    ),
+                  ],
+          ),
+          child: Center(
+            child: Text(
+              widget.text,
+              style: TextStyle(
+                color: widget.textColor,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+              ),
             ),
           ),
         ),
       ),
     );
-  }
-}
-
-// LÓGICA DEL JUEGO FLAME
-class DinoGame extends FlameGame with PanDetector {
-  late SpriteComponent ficha;
-
-  @override
-  Color backgroundColor() => Colors.transparent;
-
-  @override
-  Future<void> onLoad() async {
-    // Carga la imagen desde assets/images/
-    // Asegúrate de que el nombre coincida exactamente con tu archivo
-    final spriteDino = await loadSprite('dino1.png');
-
-    ficha = SpriteComponent(
-      sprite: spriteDino,
-      size: Vector2(80, 80),
-      anchor: Anchor.center,
-    );
-
-    ficha.position = size / 2;
-    add(ficha);
-  }
-
-  @override
-  void onPanEnd(DragEndInfo info) {
-    final velocity = info.velocity;
-
-    if (velocity.length < 100) return;
-
-    if (velocity.x.abs() > velocity.y.abs()) {
-      if (velocity.x > 0) {
-        print('Swipe: DERECHA');
-        ficha.position.x += 80;
-      } else {
-        print('Swipe: IZQUIERDA');
-        ficha.position.x -= 80;
-      }
-    } else {
-      if (velocity.y > 0) {
-        print('Swipe: ABAJO');
-        ficha.position.y += 80;
-      } else {
-        print('Swipe: ARRIBA');
-        ficha.position.y -= 80;
-      }
-    }
   }
 }
