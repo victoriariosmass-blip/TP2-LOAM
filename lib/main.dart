@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flame/game.dart' hide Matrix4;
-import 'package:flame/components.dart' hide Matrix4;
-import 'package:flame/events.dart';
 
 void main() {
   runApp(const Dino2048App());
 }
+
+class DinoGame extends FlameGame {}
 
 class Dino2048App extends StatelessWidget {
   const Dino2048App({super.key});
