@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flame/game.dart' hide Matrix4;
 
-// Importa los archivos que acabas de crear en lib/
 import 'dino_game.dart';
 import 'dino_series.dart';
 import 'game_logic.dart';
@@ -65,12 +64,35 @@ class _GameScreenState extends State<GameScreen> {
   AccountType _accountType = AccountType.basic;
   
   late final DinoGame _game;
+  Offset? _dragStart;
 
   @override
   void initState() {
     super.initState();
-    // Instanciamos el juego una sola vez en el ciclo de vida del widget
     _game = DinoGame(series: kDinoSeries.first);
+    _game.status.addListener(_onGameStatusChanged);
+  }
+
+  @override
+  void dispose() {
+    _game.status.removeListener(_onGameStatusChanged);
+    super.dispose();
+  }
+
+  void _onGameStatusChanged() {
+    final status = _game.status.value;
+    
+    if (status == GameStatus.paused) {
+      _game.overlays.add('PauseOverlay');
+    } else {
+      _game.overlays.remove('PauseOverlay');
+    }
+
+    if (status == GameStatus.gameOver) {
+      _game.overlays.add('GameOverOverlay');
+    } else {
+      _game.overlays.remove('GameOverOverlay');
+    }
   }
 
   void _setDarkMode(bool isDarkMode) {
@@ -112,16 +134,13 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  // 1. HEADER
   Widget _buildHeader(AppColors colors) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colors.header,
         border: Border.all(color: colors.outline, width: 4),
-        boxShadow: [
-          BoxShadow(color: colors.shadow, offset: const Offset(6, 6)),
-        ],
+        boxShadow: [BoxShadow(color: colors.shadow, offset: const Offset(6, 6))],
       ),
       child: Column(
         children: [
@@ -131,18 +150,13 @@ class _GameScreenState extends State<GameScreen> {
               Text(
                 'USUARIO: JUGADOR1',
                 style: TextStyle(
-                  color: colors.foreground,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
+                  color: colors.foreground, fontWeight: FontWeight.w900, fontSize: 16,
                 ),
               ),
               GestureDetector(
                 onTap: _toggleAccountType,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: _accountType == AccountType.pro 
                         ? const Color(0xFFFF6B6B) 
@@ -152,9 +166,7 @@ class _GameScreenState extends State<GameScreen> {
                   child: Text(
                     _accountType.label,
                     style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
+                      color: Colors.black, fontWeight: FontWeight.w900, letterSpacing: 2,
                     ),
                   ),
                 ),
@@ -171,9 +183,7 @@ class _GameScreenState extends State<GameScreen> {
                   return Text(
                     'SCORE: $score',
                     style: TextStyle(
-                      color: colors.foreground,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 22,
+                      color: colors.foreground, fontWeight: FontWeight.w900, fontSize: 22,
                     ),
                   );
                 },
@@ -193,8 +203,7 @@ class _GameScreenState extends State<GameScreen> {
                       customBorder: const CircleBorder(),
                       onTap: _openDiamondShop,
                       child: Container(
-                        width: 40,
-                        height: 40,
+                        width: 40, height: 40,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.black, width: 3),
@@ -207,17 +216,13 @@ class _GameScreenState extends State<GameScreen> {
                   Row(
                     children: [
                       const SizedBox(
-                        width: 27,
-                        height: 27,
-                        child: CustomPaint(painter: DiamondIconPainter()),
+                        width: 27, height: 27, child: CustomPaint(painter: DiamondIconPainter()),
                       ),
                       const SizedBox(width: 5),
                       Text(
                         '$_diamonds',
                         style: TextStyle(
-                          color: colors.foreground,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 22,
+                          color: colors.foreground, fontWeight: FontWeight.w900, fontSize: 22,
                         ),
                       ),
                     ],
@@ -231,7 +236,6 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  // 2. PODERES (Gasto de Diamantes)
   Widget _buildPowerUps(AppColors colors) {
     return ValueListenableBuilder<GameStatus>(
       valueListenable: _game.status,
@@ -240,19 +244,28 @@ class _GameScreenState extends State<GameScreen> {
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: PowerUp.values.map((power) {
-            return ElevatedButton.icon(
-              onPressed: isActive ? () => _usePowerUp(power) : null,
-              icon: const SizedBox(
-                width: 16, height: 16, 
-                child: CustomPaint(painter: DiamondIconPainter())
-              ),
-              label: Text('${power.cost} ${power.label}'),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.black,
-                backgroundColor: colors.panel,
-                disabledBackgroundColor: colors.panel.withOpacity(0.5),
-                side: const BorderSide(color: Colors.black, width: 2),
-                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: ElevatedButton.icon(
+                  onPressed: isActive ? () => _usePowerUp(power) : null,
+                  icon: const SizedBox(
+                    width: 14, height: 14, 
+                    child: CustomPaint(painter: DiamondIconPainter())
+                  ),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('${power.cost} ${power.label}')
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+                    foregroundColor: Colors.black,
+                    backgroundColor: colors.panel,
+                    disabledBackgroundColor: colors.panel.withOpacity(0.5),
+                    side: const BorderSide(color: Colors.black, width: 2),
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  ),
+                ),
               ),
             );
           }).toList(),
@@ -274,17 +287,30 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  // 3. EL TABLERO (Conecta con Flame y Gestos)
-  Widget _buildBoardPlaceholder() {
+Widget _buildBoardPlaceholder() {
     return Expanded(
       child: GestureDetector(
-        onPanEnd: (details) {
-          final v = details.velocity.pixelsPerSecond;
-          if (v.dx.abs() > v.dy.abs()) {
-            _game.swipe(v.dx > 0 ? MoveDirection.right : MoveDirection.left);
-          } else {
-            _game.swipe(v.dy > 0 ? MoveDirection.down : MoveDirection.up);
+        onPanStart: (details) {
+          _dragStart = details.localPosition; // Guardamos dónde apoyó el dedo
+        },
+        onPanUpdate: (details) {
+          if (_dragStart == null) return;
+          
+          final delta = details.localPosition - _dragStart!;
+          
+          // Si el deslizamiento supera los 40 píxeles, lo registramos
+          if (delta.distance > 40) {
+            if (delta.dx.abs() > delta.dy.abs()) {
+              _game.swipe(delta.dx > 0 ? MoveDirection.right : MoveDirection.left);
+            } else {
+              _game.swipe(delta.dy > 0 ? MoveDirection.down : MoveDirection.up);
+            }
+            // Reiniciamos a null para que no se mueva varias veces en un solo gesto
+            _dragStart = null; 
           }
+        },
+        onPanEnd: (_) {
+          _dragStart = null; // Limpiamos al levantar el dedo
         },
         child: Container(
           width: double.infinity,
@@ -292,9 +318,7 @@ class _GameScreenState extends State<GameScreen> {
           decoration: BoxDecoration(
             color: const Color(0xFF1A535C),
             border: Border.all(color: Colors.black, width: 6),
-            boxShadow: const [
-              BoxShadow(color: Colors.black, offset: Offset(8, 8)),
-            ],
+            boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(8, 8))],
           ),
           child: GameWidget(
             game: _game,
@@ -315,10 +339,7 @@ class _GameScreenState extends State<GameScreen> {
       child: Text(
         text,
         style: const TextStyle(
-          color: Colors.white,
-          fontSize: 40,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 4,
+          color: Colors.white, fontSize: 40, fontWeight: FontWeight.w900, letterSpacing: 4,
         ),
       ),
     );
@@ -369,25 +390,10 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  // 4. CONTROLES EXTERNOS
   Widget _buildControls(AppColors colors) {
-    // Escuchamos el estado para añadir/quitar los overlays de Flame automáticamente
     return ValueListenableBuilder<GameStatus>(
       valueListenable: _game.status,
       builder: (context, status, child) {
-        
-        if (status == GameStatus.paused) {
-          _game.overlays.add('PauseOverlay');
-        } else {
-          _game.overlays.remove('PauseOverlay');
-        }
-
-        if (status == GameStatus.gameOver) {
-          _game.overlays.add('GameOverOverlay');
-        } else {
-          _game.overlays.remove('GameOverOverlay');
-        }
-
         return Column(
           children: [
             Row(
@@ -519,11 +525,6 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
-// ----------------------------------------------------------------------
-// WIDGETS AUXILIARES (Anuncio, Tienda, Botones, Pintores)
-// Se mantienen idénticos a los tuyos
-// ----------------------------------------------------------------------
-
 class _DinoBitesAdvertisement extends StatefulWidget {
   const _DinoBitesAdvertisement();
   @override
@@ -590,8 +591,7 @@ class _DinoBitesAdvertisementState extends State<_DinoBitesAdvertisement> {
                   ),
                 ),
                 Container(
-                  width: 112,
-                  height: 100,
+                  width: 112, height: 100,
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF6B6B),
                     shape: BoxShape.circle,
@@ -662,11 +662,9 @@ class _DinosaurCookiePainter extends CustomPainter {
       ..cubicTo(103, 29, 104, 37, 96, 39)..lineTo(83, 39)..lineTo(79, 51)
       ..cubicTo(95, 56, 97, 68, 86, 73)..lineTo(82, 84)..lineTo(68, 84)..lineTo(65, 72)
       ..lineTo(48, 70)..lineTo(45, 84)..lineTo(31, 84)..lineTo(30, 72)..lineTo(20, 72)..close();
-    canvas.drawPath(silhouette, cookie);
-    canvas.drawPath(silhouette, outline);
+    canvas.drawPath(silhouette, cookie); canvas.drawPath(silhouette, outline);
     final spikes = Path()..moveTo(43, 40)..lineTo(47, 29)..lineTo(54, 41)..lineTo(59, 30)..lineTo(64, 43)..close();
-    canvas.drawPath(spikes, Paint()..color = const Color(0xFFE8A34A));
-    canvas.drawPath(spikes, outline);
+    canvas.drawPath(spikes, Paint()..color = const Color(0xFFE8A34A)); canvas.drawPath(spikes, outline);
     final chips = Paint()..color = const Color(0xFF75421F);
     for (final chip in [const Offset(33, 58), const Offset(48, 52), const Offset(73, 47), const Offset(59, 62), const Offset(77, 64), const Offset(40, 67)]) {
       canvas.drawCircle(chip, 2.4, chips);
@@ -733,8 +731,7 @@ class DiamondIconPainter extends CustomPainter {
     canvas.scale(size.width / 100, size.height / 100);
     final outline = Paint()..color = Colors.black..style = PaintingStyle.stroke..strokeWidth = 7..strokeJoin = StrokeJoin.round;
     final gem = Path()..moveTo(17, 34)..lineTo(34, 13)..lineTo(68, 13)..lineTo(85, 34)..lineTo(51, 88)..close();
-    canvas.drawPath(gem, Paint()..color = const Color(0xFF52D7F2));
-    canvas.drawPath(gem, outline);
+    canvas.drawPath(gem, Paint()..color = const Color(0xFF52D7F2)); canvas.drawPath(gem, outline);
     final facets = Paint()..color = const Color(0xFF1A535C)..style = PaintingStyle.stroke..strokeWidth = 4;
     canvas.drawLine(const Offset(17, 34), const Offset(85, 34), facets);
     canvas.drawLine(const Offset(34, 13), const Offset(42, 34), facets);
