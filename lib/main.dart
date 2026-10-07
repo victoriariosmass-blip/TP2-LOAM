@@ -46,7 +46,7 @@ class Dino2048App extends StatelessWidget {
         fontFamily: 'sans-serif-rounded',
         brightness: Brightness.light,
       ),
-      home: const GameScreen(),
+      home: const SplashScreen(),
     );
   }
 }
@@ -148,7 +148,7 @@ class _GameScreenState extends State<GameScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'USUARIO: JUGADOR1',
+                'USUARIO: miguelito',
                 style: TextStyle(
                   color: colors.foreground, fontWeight: FontWeight.w900, fontSize: 16,
                 ),
@@ -259,7 +259,7 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
-                    foregroundColor: Colors.black,
+                    foregroundColor: colors.foreground, 
                     backgroundColor: colors.panel,
                     disabledBackgroundColor: colors.panel.withOpacity(0.5),
                     side: const BorderSide(color: Colors.black, width: 2),
@@ -946,6 +946,75 @@ class _BrutalistButtonState extends State<BrutalistButton> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(color: widget.color, border: Border.all(color: Colors.black, width: 3), boxShadow: _isPressed ? const [] : const [BoxShadow(color: Colors.black, offset: Offset(6, 6))]),
           child: Center(child: Text(widget.text, style: TextStyle(color: widget.textColor, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
+        ),
+      ),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Espera 3 segundos y luego navega a la pantalla del juego
+    Future.delayed(const Duration(seconds: 3), () {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const GameScreen()),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF1A535C), // Azul petróleo
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE45E), // Amarillo brutalista
+                border: Border.all(color: Colors.black, width: 6),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black, offset: Offset(8, 8))
+                ],
+              ),
+              child: const Text(
+                'DINO\n2048',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black,
+                  height: 1.1,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 50),
+            const CircularProgressIndicator(
+              color: Color(0xFFFF6B6B), // Rojo coral
+              strokeWidth: 6,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'DINOSAURIOS EN MARCHA...',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+              ),
+            )
+          ],
         ),
       ),
     );
