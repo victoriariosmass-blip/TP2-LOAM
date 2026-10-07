@@ -86,20 +86,23 @@ class GameAudio {
 
   Future<void> _startMusic() async {
     try {
-      final audioContext = AudioContext(
-        android: const AudioContextAndroid(
-          audioFocus: AndroidAudioFocus.none,
-        ),
+      final musicContext = AudioContext(
+        android: const AudioContextAndroid(),
         iOS: AudioContextIOS(
-          category: AVAudioSessionCategory.ambient,
+          category: AVAudioSessionCategory.playback,
           options: {AVAudioSessionOptions.mixWithOthers},
         ),
       );
+      final effectsContext = musicContext.copy(
+        android: const AudioContextAndroid(
+          audioFocus: AndroidAudioFocus.none,
+        ),
+      );
       await Future.wait([
-        _music.setAudioContext(audioContext),
-        _swipe.setAudioContext(audioContext),
-        _evolution.setAudioContext(audioContext),
-        _gameOver.setAudioContext(audioContext),
+        _music.setAudioContext(musicContext),
+        _swipe.setAudioContext(effectsContext),
+        _evolution.setAudioContext(effectsContext),
+        _gameOver.setAudioContext(effectsContext),
       ]);
       if (_disposed) return;
       await _music.setReleaseMode(ReleaseMode.loop);
