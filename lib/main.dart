@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flame/game.dart' hide Matrix4;
+import 'package:audioplayers/audioplayers.dart';
 
 import 'dino_game.dart';
 import 'dino_series.dart';
@@ -33,8 +34,30 @@ class AppColors {
       isDark ? const Color(0xFFC29AFF) : const Color(0xFF9B5DE5);
 }
 
-class Dino2048App extends StatelessWidget {
+const _diamondPackBackground = Color(0xFF9FEAF6);
+
+class Dino2048App extends StatefulWidget {
   const Dino2048App({super.key});
+
+  @override
+  State<Dino2048App> createState() => _Dino2048AppState();
+}
+
+class _Dino2048AppState extends State<Dino2048App> {
+  late final GameAudio _audio;
+
+  @override
+  void initState() {
+    super.initState();
+    _audio = GameAudio();
+    unawaited(_audio.startMusic());
+  }
+
+  @override
+  void dispose() {
+    unawaited(_audio.dispose());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,13 +69,85 @@ class Dino2048App extends StatelessWidget {
         fontFamily: 'sans-serif-rounded',
         brightness: Brightness.light,
       ),
-      home: const SplashScreen(),
+      home: SplashScreen(audio: _audio),
     );
   }
 }
 
+class GameAudio {
+  final AudioPlayer _music = AudioPlayer();
+  final AudioPlayer _swipe = AudioPlayer();
+  final AudioPlayer _evolution = AudioPlayer();
+  final AudioPlayer _gameOver = AudioPlayer();
+  bool _disposed = false;
+  Future<void>? _startFuture;
+
+  Future<void> startMusic() => _startFuture ??= _startMusic();
+
+  Future<void> _startMusic() async {
+    try {
+      final audioContext = AudioContext(
+        android: const AudioContextAndroid(
+          audioFocus: AndroidAudioFocus.none,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: {AVAudioSessionOptions.mixWithOthers},
+        ),
+      );
+      await Future.wait([
+        _music.setAudioContext(audioContext),
+        _swipe.setAudioContext(audioContext),
+        _evolution.setAudioContext(audioContext),
+        _gameOver.setAudioContext(audioContext),
+      ]);
+      if (_disposed) return;
+      await _music.setReleaseMode(ReleaseMode.loop);
+      await _music.play(AssetSource('sounds/sanpomichi.mp3'));
+    } catch (error, stackTrace) {
+      _reportError('starting background music', error, stackTrace);
+    }
+  }
+
+  void playSwipe() => unawaited(_playEffect(_swipe, 'sounds/swipe.mp3'));
+
+  void playEvolution() =>
+      unawaited(_playEffect(_evolution, 'sounds/evolucion.mp3'));
+
+  void playGameOver() =>
+      unawaited(_playEffect(_gameOver, 'sounds/gameover.mp3'));
+
+  Future<void> _playEffect(AudioPlayer player, String asset) async {
+    if (_disposed) return;
+    try {
+      await player.stop();
+      await player.play(AssetSource(asset));
+    } catch (error, stackTrace) {
+      _reportError('playing $asset', error, stackTrace);
+    }
+  }
+
+  void _reportError(String action, Object error, StackTrace stackTrace) {
+    debugPrint('Audio error while $action: $error');
+    debugPrintStack(stackTrace: stackTrace);
+  }
+
+  Future<void> dispose() async {
+    _disposed = true;
+    await (_startFuture ?? Future<void>.value());
+    await Future.wait([
+      _music.dispose(),
+      _swipe.dispose(),
+      _evolution.dispose(),
+      _gameOver.dispose(),
+    ]);
+  }
+}
+
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
+  final GameAudio audio;
+
+  const GameScreen({super.key, required this.audio});
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -70,6 +165,9 @@ class _GameScreenState extends State<GameScreen> {
   void initState() {
     super.initState();
     _game = DinoGame(series: kDinoSeries.first);
+    _game.onValidSwipe = widget.audio.playSwipe;
+    _game.onEvolution = widget.audio.playEvolution;
+    _game.onGameOver = widget.audio.playGameOver;
     _game.status.addListener(_onGameStatusChanged);
   }
 
@@ -139,7 +237,7 @@ class _GameScreenState extends State<GameScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colors.header,
-        border: Border.all(color: colors.outline, width: 4),
+        border: Border.all(color: colors.foreground, width: 4),
         boxShadow: [BoxShadow(color: colors.shadow, offset: const Offset(6, 6))],
       ),
       child: Column(
@@ -260,9 +358,10 @@ class _GameScreenState extends State<GameScreen> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
                     foregroundColor: colors.foreground, 
+                    disabledForegroundColor: colors.foreground,
                     backgroundColor: colors.panel,
                     disabledBackgroundColor: colors.panel.withOpacity(0.5),
-                    side: const BorderSide(color: Colors.black, width: 2),
+                    side: BorderSide(color: colors.foreground, width: 2),
                     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
                   ),
                 ),
@@ -707,18 +806,17 @@ class DiamondPack {
   final String name;
   final int amount;
   final String price;
-  final PackIllustrationType illustration;
-  final Color color;
-  const DiamondPack({required this.name, required this.amount, required this.price, required this.illustration, required this.color});
+  final String imageAsset;
+  const DiamondPack({required this.name, required this.amount, required this.price, required this.imageAsset});
 }
 
 const _diamondPacks = [
-  DiamondPack(name: 'PUÑADO', amount: 10, price: r'$500', illustration: PackIllustrationType.handful, color: Color(0xFFFF6B6B)),
-  DiamondPack(name: 'BOLSA', amount: 25, price: r'$1.200', illustration: PackIllustrationType.backpack, color: Color(0xFFFFBF69)),
-  DiamondPack(name: 'CAJA', amount: 50, price: r'$2.500', illustration: PackIllustrationType.box, color: Color(0xFF2EC4B6)),
-  DiamondPack(name: 'CAJÓN', amount: 100, price: r'$5.200', illustration: PackIllustrationType.crate, color: Color(0xFF9B5DE5)),
-  DiamondPack(name: 'CARRETILLA', amount: 200, price: r'$10.500', illustration: PackIllustrationType.wheelbarrow, color: Color(0xFF00BBF9)),
-  DiamondPack(name: 'LLUVIA', amount: 500, price: r'$25.000', illustration: PackIllustrationType.diamondRain, color: Color(0xFFF15BB5)),
+  DiamondPack(name: 'PUÑADO', amount: 10, price: r'$500', imageAsset: 'assets/images/diamantes1.jpg'),
+  DiamondPack(name: 'BOLSA', amount: 25, price: r'$1.200', imageAsset: 'assets/images/diamantes2.jpg'),
+  DiamondPack(name: 'CAJA', amount: 50, price: r'$2.500', imageAsset: 'assets/images/diamantes3.jpg'),
+  DiamondPack(name: 'CAJÓN', amount: 100, price: r'$5.200', imageAsset: 'assets/images/diamantes4.jpg'),
+  DiamondPack(name: 'CARRETILLA', amount: 200, price: r'$10.500', imageAsset: 'assets/images/diamantes5.jpg'),
+  DiamondPack(name: 'LLUVIA', amount: 500, price: r'$25.000', imageAsset: 'assets/images/diamantes6.jpg'),
 ];
 
 enum PackIllustrationType { handful, backpack, box, crate, wheelbarrow, diamondRain }
@@ -900,12 +998,12 @@ class _DiamondPackCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: pack.color, border: Border.all(color: Colors.black, width: 3), boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(4, 4))]),
+      decoration: BoxDecoration(color: _diamondPackBackground, border: Border.all(color: Colors.black, width: 3), boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(4, 4))]),
       child: Padding(
         padding: const EdgeInsets.all(7),
         child: Column(
           children: [
-            Expanded(child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: PackIllustration(type: pack.illustration))),
+            Expanded(child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Image.asset(pack.imageAsset, fit: BoxFit.contain))),
             FittedBox(fit: BoxFit.scaleDown, child: Text(pack.name, maxLines: 1, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 0.3))),
             const SizedBox(height: 2),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [const SizedBox(width: 19, height: 19, child: CustomPaint(painter: DiamondIconPainter())), const SizedBox(width: 4), Text('${pack.amount}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17))]),
@@ -953,7 +1051,9 @@ class _BrutalistButtonState extends State<BrutalistButton> {
 }
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final GameAudio audio;
+
+  const SplashScreen({super.key, required this.audio});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -966,7 +1066,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // Espera 3 segundos y luego navega a la pantalla del juego
     Future.delayed(const Duration(seconds: 3), () {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const GameScreen()),
+        MaterialPageRoute(builder: (_) => GameScreen(audio: widget.audio)),
       );
     });
   }

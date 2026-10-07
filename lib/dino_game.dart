@@ -55,6 +55,9 @@ class DinoGame extends FlameGame {
 
   /// Se llama cuando se supera el mejor puntaje (para guardarlo).
   void Function(int best)? onBestScoreChanged;
+  VoidCallback? onValidSwipe;
+  VoidCallback? onEvolution;
+  VoidCallback? onGameOver;
 
   final GameLogic _logic = GameLogic();
   final Map<int, TileComponent> _tiles = {};
@@ -229,6 +232,10 @@ class DinoGame extends FlameGame {
     final before = _logic.snapshot();
     final result = _logic.move(direction);
     if (!result.moved) return;
+    onValidSwipe?.call();
+    if (result.slides.any((slide) => slide.absorbedInto != null)) {
+      onEvolution?.call();
+    }
 
     _undoSnapshot = before;
     canUndo.value = true;
@@ -281,7 +288,10 @@ class DinoGame extends FlameGame {
       status.value = GameStatus.won;
       return;
     }
-    if (!_logic.canMove) status.value = GameStatus.gameOver;
+    if (!_logic.canMove) {
+      onGameOver?.call();
+      status.value = GameStatus.gameOver;
+    }
   }
 
   void _updateBest() {
@@ -407,7 +417,11 @@ class TileComponent extends PositionComponent {
     add(
       ScaleEffect.to(
         Vector2.all(1.18),
-        EffectController(duration: 0.09, alternate: true, curve: Curves.easeOut),
+        EffectController(
+          duration: 0.09,
+          alternate: true,
+          curve: Curves.easeOut,
+        ),
       ),
     );
   }
