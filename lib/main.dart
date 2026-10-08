@@ -45,16 +45,31 @@ class Dino2048App extends StatefulWidget {
 
 class _Dino2048AppState extends State<Dino2048App> {
   late final GameAudio _audio;
+  late final AppLifecycleListener _lifecycleListener;
 
   @override
   void initState() {
     super.initState();
     _audio = GameAudio();
     unawaited(_audio.startMusic());
+
+    // Escuchamos los cambios del sistema operativo
+    _lifecycleListener = AppLifecycleListener(
+      onStateChange: (state) {
+        if (state == AppLifecycleState.paused || 
+            state == AppLifecycleState.inactive || 
+            state == AppLifecycleState.hidden) {
+          _audio.pauseMusic();
+        } else if (state == AppLifecycleState.resumed) {
+          _audio.resumeMusic();
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
+    _lifecycleListener.dispose();
     unawaited(_audio.dispose());
     super.dispose();
   }
@@ -82,6 +97,10 @@ class GameAudio {
   bool _disposed = false;
   Future<void>? _startFuture;
 
+  // Estados de volumen
+  bool isMusicMuted = false;
+  bool isEffectsMuted = false;
+
   Future<void> startMusic() => _startFuture ??= _startMusic();
 
   Future<void> _startMusic() async {
@@ -94,9 +113,7 @@ class GameAudio {
         ),
       );
       final effectsContext = musicContext.copy(
-        android: const AudioContextAndroid(
-          audioFocus: AndroidAudioFocus.none,
-        ),
+        android: const AudioContextAndroid(audioFocus: AndroidAudioFocus.none),
       );
       await Future.wait([
         _music.setAudioContext(musicContext),
@@ -106,22 +123,39 @@ class GameAudio {
       ]);
       if (_disposed) return;
       await _music.setReleaseMode(ReleaseMode.loop);
+      
+      // Iniciamos con el volumen correspondiente
+      await _music.setVolume(isMusicMuted ? 0.0 : 1.0);
       await _music.play(AssetSource('sounds/sanpomichi.mp3'));
     } catch (error, stackTrace) {
       _reportError('starting background music', error, stackTrace);
     }
   }
 
+  // --- Controles de ciclo de vida ---
+  void pauseMusic() => _music.pause();
+  void resumeMusic() {
+    if (!isMusicMuted) _music.resume();
+  }
+
+  // --- Controles de interfaz ---
+  void toggleMusic() {
+    isMusicMuted = !isMusicMuted;
+    _music.setVolume(isMusicMuted ? 0.0 : 1.0);
+  }
+
+  void toggleEffects() {
+    isEffectsMuted = !isEffectsMuted;
+  }
+
+  // --- Efectos ---
   void playSwipe() => unawaited(_playEffect(_swipe, 'sounds/swipe.mp3'));
-
-  void playEvolution() =>
-      unawaited(_playEffect(_evolution, 'sounds/evolucion.mp3'));
-
-  void playGameOver() =>
-      unawaited(_playEffect(_gameOver, 'sounds/gameover.mp3'));
+  void playEvolution() => unawaited(_playEffect(_evolution, 'sounds/evolucion.mp3'));
+  void playGameOver() => unawaited(_playEffect(_gameOver, 'sounds/gameover.mp3'));
 
   Future<void> _playEffect(AudioPlayer player, String asset) async {
-    if (_disposed) return;
+    // Si los efectos están muteados, abortamos antes de reproducir
+    if (_disposed || isEffectsMuted) return;
     try {
       await player.stop();
       await player.play(AssetSource(asset));
@@ -139,10 +173,7 @@ class GameAudio {
     _disposed = true;
     await (_startFuture ?? Future<void>.value());
     await Future.wait([
-      _music.dispose(),
-      _swipe.dispose(),
-      _evolution.dispose(),
-      _gameOver.dispose(),
+      _music.dispose(), _swipe.dispose(), _evolution.dispose(), _gameOver.dispose(),
     ]);
   }
 }
@@ -292,6 +323,24 @@ class _GameScreenState extends State<GameScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Botón de ajustes de Audio
+                  Material(
+                  color: const Color(0xFFC29AFF), // Morado brutalista
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _showAudioSettings,
+                  child: Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.black, width: 3),
+                  ),
+                  child: const Icon(Icons.volume_up, color: Colors.black, size: 23),
+                    ),
+                  ),
+                  ),
+                  const SizedBox(width: 10),
                   _ThemeToggleButton(
                     isDarkMode: _isDarkMode,
                     onPressed: () => _setDarkMode(!_isDarkMode),
@@ -625,6 +674,82 @@ Widget _buildBoardPlaceholder() {
       builder: (_) => const _DinoBitesAdvertisement(),
     );
   }
+
+  void _showAudioSettings() {
+  showDialog(
+    context: context,
+    builder: (context) {
+      // Usamos StatefulBuilder para actualizar los botones dentro del Dialog
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors(_isDarkMode).panel,
+                border: Border.all(color: Colors.black, width: 4),
+                boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(8, 8))],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'AJUSTES DE AUDIO',
+                    style: TextStyle(
+                      color: AppColors(_isDarkMode).foreground,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Toggle Música
+                  BrutalistButton(
+                    text: widget.audio.isMusicMuted ? 'MÚSICA: OFF' : 'MÚSICA: ON',
+                    color: widget.audio.isMusicMuted ? const Color(0xFFFF8994) : const Color(0xFF45E0C0),
+                    textColor: Colors.black,
+                    onPressed: () {
+                      widget.audio.toggleMusic();
+                      setModalState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // Toggle Efectos
+                  BrutalistButton(
+                    text: widget.audio.isEffectsMuted ? 'EFECTOS: OFF' : 'EFECTOS: ON',
+                    color: widget.audio.isEffectsMuted ? const Color(0xFFFF8994) : const Color(0xFF45E0C0),
+                    textColor: Colors.black,
+                    onPressed: () {
+                      widget.audio.toggleEffects();
+                      setModalState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFE45E),
+                        foregroundColor: Colors.black,
+                        side: const BorderSide(color: Colors.black, width: 3),
+                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text('CERRAR', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 }
 
 class _DinoBitesAdvertisement extends StatefulWidget {
