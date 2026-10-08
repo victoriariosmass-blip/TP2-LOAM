@@ -53,7 +53,7 @@ class _Dino2048AppState extends State<Dino2048App> {
     _audio = GameAudio();
     unawaited(_audio.startMusic());
 
-    // Escuchamos los cambios del sistema operativo
+    // escuchamos los cambios del sistema operativo
     _lifecycleListener = AppLifecycleListener(
       onStateChange: (state) {
         if (state == AppLifecycleState.paused || 
@@ -97,7 +97,7 @@ class GameAudio {
   bool _disposed = false;
   Future<void>? _startFuture;
 
-  // Estados de volumen
+  // estados de volumen
   bool isMusicMuted = false;
   bool isEffectsMuted = false;
 
@@ -124,7 +124,7 @@ class GameAudio {
       if (_disposed) return;
       await _music.setReleaseMode(ReleaseMode.loop);
       
-      // Iniciamos con el volumen correspondiente
+      // iniciamos con el volumen correspondiente
       await _music.setVolume(isMusicMuted ? 0.0 : 1.0);
       await _music.play(AssetSource('sounds/sanpomichi.mp3'));
     } catch (error, stackTrace) {
@@ -132,13 +132,13 @@ class GameAudio {
     }
   }
 
-  // --- Controles de ciclo de vida ---
+  // controles de ciclo de vida 
   void pauseMusic() => _music.pause();
   void resumeMusic() {
     if (!isMusicMuted) _music.resume();
   }
 
-  // --- Controles de interfaz ---
+  // controles de interfaz 
   void toggleMusic() {
     isMusicMuted = !isMusicMuted;
     _music.setVolume(isMusicMuted ? 0.0 : 1.0);
@@ -148,13 +148,13 @@ class GameAudio {
     isEffectsMuted = !isEffectsMuted;
   }
 
-  // --- Efectos ---
+  // efectos de sonido
   void playSwipe() => unawaited(_playEffect(_swipe, 'sounds/swipe.mp3'));
   void playEvolution() => unawaited(_playEffect(_evolution, 'sounds/evolucion.mp3'));
   void playGameOver() => unawaited(_playEffect(_gameOver, 'sounds/gameover.mp3'));
 
   Future<void> _playEffect(AudioPlayer player, String asset) async {
-    // Si los efectos están muteados, abortamos antes de reproducir
+    // si los efectos están muteados, abortamos antes de reproducir
     if (_disposed || isEffectsMuted) return;
     try {
       await player.stop();
@@ -323,9 +323,9 @@ class _GameScreenState extends State<GameScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Botón de ajustes de Audio
+                  // botón de ajustes de audio
                   Material(
-                  color: const Color(0xFFC29AFF), // Morado brutalista
+                  color: const Color(0xFFC29AFF), 
                   shape: const CircleBorder(),
                   child: InkWell(
                     customBorder: const CircleBorder(),
@@ -442,26 +442,26 @@ Widget _buildBoardPlaceholder() {
     return Expanded(
       child: GestureDetector(
         onPanStart: (details) {
-          _dragStart = details.localPosition; // Guardamos dónde apoyó el dedo
+          _dragStart = details.localPosition; // guardamos dónde apoyó el dedo
         },
         onPanUpdate: (details) {
           if (_dragStart == null) return;
           
           final delta = details.localPosition - _dragStart!;
           
-          // Si el deslizamiento supera los 40 píxeles, lo registramos
+          // si el deslizamiento supera los 40 píxeles, lo registramos
           if (delta.distance > 40) {
             if (delta.dx.abs() > delta.dy.abs()) {
               _game.swipe(delta.dx > 0 ? MoveDirection.right : MoveDirection.left);
             } else {
               _game.swipe(delta.dy > 0 ? MoveDirection.down : MoveDirection.up);
             }
-            // Reiniciamos a null para que no se mueva varias veces en un solo gesto
+            // reiniciamos a null para que no se mueva varias veces en un solo gesto
             _dragStart = null; 
           }
         },
         onPanEnd: (_) {
-          _dragStart = null; // Limpiamos al levantar el dedo
+          _dragStart = null; // limpiamos al levantar el dedo
         },
         child: Container(
           width: double.infinity,
@@ -679,7 +679,7 @@ Widget _buildBoardPlaceholder() {
   showDialog(
     context: context,
     builder: (context) {
-      // Usamos StatefulBuilder para actualizar los botones dentro del Dialog
+      // usamos StatefulBuilder para actualizar los botones dentro del Dialog
       return StatefulBuilder(
         builder: (context, setModalState) {
           return Dialog(
@@ -705,7 +705,7 @@ Widget _buildBoardPlaceholder() {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // Toggle Música
+                  // toggle música
                   BrutalistButton(
                     text: widget.audio.isMusicMuted ? 'MÚSICA: OFF' : 'MÚSICA: ON',
                     color: widget.audio.isMusicMuted ? const Color(0xFFFF8994) : const Color(0xFF45E0C0),
@@ -716,7 +716,7 @@ Widget _buildBoardPlaceholder() {
                     },
                   ),
                   const SizedBox(height: 16),
-                  // Toggle Efectos
+                  // toggle efectos
                   BrutalistButton(
                     text: widget.audio.isEffectsMuted ? 'EFECTOS: OFF' : 'EFECTOS: ON',
                     color: widget.audio.isEffectsMuted ? const Color(0xFFFF8994) : const Color(0xFF45E0C0),
@@ -1191,7 +1191,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Espera 3 segundos y luego navega a la pantalla del juego
+    // espera 3 segundos y luego navega a la pantalla del juego
     Future.delayed(const Duration(seconds: 3), () {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => GameScreen(audio: widget.audio)),
@@ -1202,7 +1202,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A535C), // Azul petróleo
+      backgroundColor: const Color(0xFF1A535C), 
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1210,7 +1210,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFE45E), // Amarillo brutalista
+                color: const Color(0xFFFFE45E), 
                 border: Border.all(color: Colors.black, width: 6),
                 boxShadow: const [
                   BoxShadow(color: Colors.black, offset: Offset(8, 8))
@@ -1230,7 +1230,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 50),
             const CircularProgressIndicator(
-              color: Color(0xFFFF6B6B), // Rojo coral
+              color: Color(0xFFFF6B6B), 
               strokeWidth: 6,
             ),
             const SizedBox(height: 20),

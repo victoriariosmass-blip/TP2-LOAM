@@ -13,7 +13,7 @@ import 'game_logic.dart';
 
 enum GameStatus { idle, playing, paused, gameOver, won }
 
-/// Poderes que se pagan con diamantes.
+/// poderes que se pagan con diamantes
 enum PowerUp {
   undo(1, 'DESHACER'),
   shuffle(2, 'MEZCLAR'),
@@ -24,7 +24,7 @@ enum PowerUp {
   const PowerUp(this.cost, this.label);
 }
 
-/// Costo de seguir jugando después de perder.
+/// costo de seguir jugando después de perder
 const int kContinueCost = 5;
 
 const _slideTime = 0.12;
@@ -46,14 +46,14 @@ const _tileColors = [
 class DinoGame extends FlameGame {
   DinoGame({required DinoSeries series}) : series = ValueNotifier(series);
 
-  // ---- Estado observable desde Flutter (header, botones, overlays) ----
+  // estado observable desde Flutter (header, botones, overlays)
   final ValueNotifier<DinoSeries> series;
   final ValueNotifier<int> score = ValueNotifier(0);
   final ValueNotifier<int> bestScore = ValueNotifier(0);
   final ValueNotifier<GameStatus> status = ValueNotifier(GameStatus.idle);
   final ValueNotifier<bool> canUndo = ValueNotifier(false);
 
-  /// Se llama cuando se supera el mejor puntaje (para guardarlo).
+  /// se llama cuando se supera el mejor puntaje (para guardarlo).
   void Function(int best)? onBestScoreChanged;
   VoidCallback? onValidSwipe;
   VoidCallback? onEvolution;
@@ -83,9 +83,7 @@ class DinoGame extends FlameGame {
     _loaded = true;
   }
 
-  // ------------------------------------------------------------------
-  // Layout
-  // ------------------------------------------------------------------
+  // Layout  
 
   @override
   void onGameResize(Vector2 size) {
@@ -142,9 +140,7 @@ class DinoGame extends FlameGame {
     super.render(canvas);
   }
 
-  // ------------------------------------------------------------------
   // Sprites
-  // ------------------------------------------------------------------
 
   Future<void> _loadSprites(DinoSeries s) async {
     for (final path in s.images) {
@@ -152,7 +148,7 @@ class DinoGame extends FlameGame {
       try {
         _sprites[path] = Sprite(await images.load(path));
       } catch (_) {
-        // Archivo inexistente: la ficha se dibuja solo con el número.
+        // archivo inexistente: la ficha se dibuja solo con el número
       }
     }
   }
@@ -167,11 +163,9 @@ class DinoGame extends FlameGame {
     series.value = s; // las fichas leen el sprite en cada frame
   }
 
-  // ------------------------------------------------------------------
-  // Control de partida (lo llama la botonera de Flutter)
-  // ------------------------------------------------------------------
+  // control de partida (lo llama la botonera de Flutter)
 
-  /// INICIO: empieza una partida, o reanuda si estaba en pausa.
+  /// INICIO: empieza una partida, o reanuda si estaba en pausa
   void start() {
     switch (status.value) {
       case GameStatus.idle:
@@ -197,16 +191,16 @@ class DinoGame extends FlameGame {
     }
   }
 
-  /// REINICIAR: vuelve a empezar con la misma serie.
+  /// REINICIAR: vuelve a empezar con la misma serie
   void restart() => _newRound();
 
-  /// NUEVA: empieza de cero con otra serie.
+  /// NUEVA: empieza de cero con otra serie
   Future<void> newGame(DinoSeries s) async {
     await setSeries(s);
     _newRound();
   }
 
-  /// Después de llegar a 2048, seguir jugando.
+  /// Después de llegar a 2048, seguir jugando
   void keepPlaying() {
     if (status.value == GameStatus.won) status.value = GameStatus.playing;
   }
@@ -222,9 +216,7 @@ class DinoGame extends FlameGame {
     status.value = GameStatus.playing;
   }
 
-  // ------------------------------------------------------------------
   // Movimiento
-  // ------------------------------------------------------------------
 
   void swipe(MoveDirection direction) {
     if (status.value != GameStatus.playing || _busy || !_loaded) return;
@@ -301,9 +293,7 @@ class DinoGame extends FlameGame {
     }
   }
 
-  // ------------------------------------------------------------------
   // Poderes (devuelven true si se aplicaron: recién ahí se cobra)
-  // ------------------------------------------------------------------
 
   bool get _canUsePowerUp =>
       status.value == GameStatus.playing && !_busy && _loaded;
@@ -327,7 +317,7 @@ class DinoGame extends FlameGame {
     return true;
   }
 
-  /// Elimina las 3 fichas más chicas.
+  /// elimina las 3 fichas más chicas
   bool cleanSmallest() {
     if (!_canUsePowerUp || _logic.tiles.length < 4) return false;
     _saveUndo();
@@ -342,7 +332,7 @@ class DinoGame extends FlameGame {
     PowerUp.clean => cleanSmallest(),
   };
 
-  /// Después de perder: borra las 4 fichas más chicas y sigue.
+  /// después de perder: borra las 4 fichas más chicas y sigue
   bool continueAfterGameOver() {
     if (status.value != GameStatus.gameOver) return false;
     _logic.removeSmallest(4);
@@ -358,9 +348,7 @@ class DinoGame extends FlameGame {
     canUndo.value = true;
   }
 
-  // ------------------------------------------------------------------
   // Componentes
-  // ------------------------------------------------------------------
 
   void _rebuild({required bool animate}) {
     _round++;
@@ -395,7 +383,7 @@ class DinoGame extends FlameGame {
   }
 }
 
-/// Ficha visual: fondo de color + imagen del dino + número.
+/// ficha visual: fondo de color + imagen del dino + número
 class TileComponent extends PositionComponent {
   TileComponent({
     required this.tileId,

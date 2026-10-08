@@ -7,19 +7,19 @@ enum AccountType {
   String get label => this == AccountType.pro ? 'PRO' : 'BASIC';
 }
 
-/// Cantidad de etapas por serie: 2, 4, 8, ... 2048 = 11 etapas.
+/// cant de etapas por serie: 2, 4, 8, ... 2048 = 11 etapas
 const int kStageCount = 11;
 
 class DinoSeries {
   final String id;
   final String name;
 
-  /// Si es true, solo la cuenta PRO puede usarla.
+  /// si es true, solo la cuenta PRO puede usarla.
   final bool proOnly;
   final Color color;
 
-  /// Nombres de archivo dentro de assets/images/, ordenados de la etapa
-  /// 1 (valor 2) a la etapa 11 (valor 2048).
+  /// nombres de archivo dentro de assets/images/, ordenados de la etapa
+  /// 1 (valor 2) a la etapa 11 (valor 2048)
   final List<String> images;
 
   const DinoSeries({
@@ -33,7 +33,7 @@ class DinoSeries {
   bool isAllowedFor(AccountType account) =>
       !proOnly || account == AccountType.pro;
 
-  /// Devuelve el archivo de imagen para un valor (2, 4, 8...) o null.
+  /// devuelve el archivo de imagen para un valor (2, 4, 8...) o null.
   String? imageForValue(int value) {
     if (value < 2 || (value & (value - 1)) != 0) return null;
     final stage = value.bitLength - 2; // 2 -> 0, 4 -> 1, ..., 2048 -> 10
@@ -41,7 +41,7 @@ class DinoSeries {
   }
 }
 
-// Lista explícita para la Serie 1 (Básica)
+// lista explícita para la serie 1 
 const List<String> _series1Images = [
   'dino1.png',
   'dino2.png',
@@ -56,7 +56,7 @@ const List<String> _series1Images = [
   'dino11.png',
 ];
 
-// Lista explícita para la Serie 2 (Pro) - Comparte los 4 primeros
+// lista explícita para la serie 2 (pro), comparte los 4 primeros
 const List<String> _series2Images = [
   'dino1.png',
   'dino2.png',
@@ -71,19 +71,19 @@ const List<String> _series2Images = [
   'dino11b.png',
 ];
 
-/// Lista principal de series disponibles en el juego.
+/// lista principal de series disponibles en el juego
 final List<DinoSeries> kDinoSeries = [
   DinoSeries(
     id: 'serie_basica',
     name: 'DINO BÁSICOS',
-    proOnly: false, // Disponible para BASIC y PRO
+    proOnly: false, // disponible para BASIC y PRO
     color: const Color(0xFF2EC4B6),
     images: _series1Images,
   ),
   DinoSeries(
     id: 'serie_pro',
     name: 'DINO EVOLUCIÓN (PRO)',
-    proOnly: true, // Bloqueada para BASIC, disponible para PRO
+    proOnly: true, // bloqueada para BASIC, disponible para PRO
     color: const Color(0xFFFFBF69),
     images: _series2Images,
   ),

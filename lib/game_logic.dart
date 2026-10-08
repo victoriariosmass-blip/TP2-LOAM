@@ -2,8 +2,8 @@ import 'dart:math';
 
 enum MoveDirection { up, down, left, right }
 
-/// Una ficha lógica del tablero. Tiene id estable para que Flame pueda
-/// animar el mismo componente de una celda a otra.
+/// una ficha lógica del tablero, tiene id estable para que Flame pueda
+/// animar el mismo componente de una celda a otra
 class TileData {
   final int id;
   int value;
@@ -15,9 +15,9 @@ class TileData {
   TileData copy() => TileData(id, value, row, col);
 }
 
-/// Describe cómo se mueve una ficha en un turno.
-/// Si [absorbedInto] != null, la ficha se fusiona con esa otra y desaparece
-/// al llegar; [newValue] es el valor que pasa a tener la ficha que sobrevive.
+/// describe cómo se mueve una ficha en un turno
+/// si [absorbedInto] != null, la ficha se fusiona con esa otra y desaparece
+/// al llegar, [newValue] es el valor que pasa a tener la ficha que sobrevive
 class TileSlide {
   final int tileId;
   final int toRow;
@@ -98,7 +98,7 @@ class GameLogic {
     }
   }
 
-  /// Crea una ficha (90% un 2, 10% un 4) en una celda vacía.
+  /// crea una ficha (90% un 2, 10% un 4) en una celda vacía
   TileData? spawnRandom() {
     final empty = <(int, int)>[
       for (var r = 0; r < size; r++)
@@ -112,8 +112,8 @@ class GameLogic {
     return tile;
   }
 
-  /// Posiciones de una línea, ordenadas desde el borde hacia donde se mueven
-  /// las fichas.
+  /// posiciones de una línea, ordenadas desde el borde hacia donde se mueven
+  /// las fichas
   List<(int, int)> _line(MoveDirection dir, int i) {
     switch (dir) {
       case MoveDirection.left:
@@ -142,7 +142,7 @@ class GameLogic {
         if (tile == null) continue;
 
         if (placed.isNotEmpty && !lastMerged && placed.last.value == tile.value) {
-          // Fusión: una sola por ficha y por movimiento.
+          // fusión: una sola por ficha y por movimiento.
           final survivor = placed.last;
           final dest = line[placed.length - 1];
           survivor.value *= 2;
@@ -200,7 +200,7 @@ class GameLogic {
     return false;
   }
 
-  // ---------- Deshacer ----------
+  // deshacer
 
   BoardSnapshot snapshot() => BoardSnapshot(
     tiles: [for (final t in tiles) t.copy()],
@@ -218,9 +218,9 @@ class GameLogic {
     _nextId = s.nextId;
   }
 
-  // ---------- Poderes que cuestan diamantes ----------
+  // poderes que cuestan diamantes
 
-  /// Reubica todas las fichas en celdas al azar.
+  /// reubica todas las fichas en celdas al azar
   void shuffle() {
     final ts = tiles;
     final cells = <(int, int)>[
@@ -235,7 +235,7 @@ class GameLogic {
     }
   }
 
-  /// Elimina las [count] fichas de menor valor (deja siempre al menos una).
+  /// elimina las [count] fichas de menor valor (deja siempre al menos una)
   int removeSmallest(int count) {
     final ts = tiles
       ..sort((a, b) {
